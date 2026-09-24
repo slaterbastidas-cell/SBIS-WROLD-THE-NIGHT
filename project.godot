@@ -1,0 +1,15 @@
+[application]
+config/name="Eclipse World — Children of the Storm"
+run/main_scene="res://world/world.tscn"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.015, 0.02, 0.035, 1)
+
+[autoload]
+WorldManager="*res://world/world_manager.gd"
