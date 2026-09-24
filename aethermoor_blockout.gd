@@ -28,6 +28,7 @@ var region_heights := [2600.0, 1900.0, 1200.0, 900.0, 3600.0, 2100.0, 1500.0, 23
 func _ready() -> void:
 	for i in REGION_COUNT:
 		_create_region(i, EclipseWorldConstants.REGION_NAMES[i], region_centers[i])
+	_create_fractura(region_centers[8])
 
 func _create_region(index: int, region_name: String, center: Vector3) -> void:
 	var mesh_instance := MeshInstance3D.new()
@@ -91,6 +92,40 @@ func _build_island_mesh(index: int, center: Vector3) -> ArrayMesh:
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
+
+func _create_fractura(center: Vector3) -> void:
+	var root := Node3D.new()
+	root.name = "La_Fractura"
+	root.position = center + Vector3(0.0, 5000.0, 0.0)
+	$Regions.add_child(root)
+
+	var wound := StandardMaterial3D.new()
+	wound.albedo_color = Color("#10151C")
+	wound.emission_enabled = true
+	wound.emission = Color("#D9F4FF")
+	wound.emission_energy_multiplier = 3.5
+	wound.roughness = 0.35
+	wound.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	wound.albedo_color.a = 0.78
+
+	for angle in [ -18.0, 18.0 ]:
+		var blade := MeshInstance3D.new()
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(180.0, 12000.0, 900.0)
+		blade.mesh = mesh
+		blade.rotation_degrees = Vector3(0.0, 0.0, angle)
+		blade.material_override = wound
+		root.add_child(blade)
+
+	var core := MeshInstance3D.new()
+	var core_mesh := CylinderMesh.new()
+	core_mesh.top_radius = 260.0
+	core_mesh.bottom_radius = 420.0
+	core_mesh.height = 9000.0
+	core_mesh.radial_segments = 12
+	core.mesh = core_mesh
+	core.material_override = wound
+	root.add_child(core)
 
 func _create_landmark(index: int, center: Vector3, terrain_height: float) -> void:
 	var root := Node3D.new()
