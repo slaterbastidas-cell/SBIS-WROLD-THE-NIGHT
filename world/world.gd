@@ -2,6 +2,10 @@ extends Node3D
 
 func _ready() -> void:
 	$WorldEnvironment.environment = _build_environment()
+	WorldManager.update_player_position($ExplorerCamera.global_position)
+	$Aethermoor/Streaming.update_streaming(WorldManager.player_world_position)
+
+func _process(_delta: float) -> void:
 	$Aethermoor/Streaming.update_streaming(WorldManager.player_world_position)
 
 func _build_environment() -> Environment:
@@ -26,6 +30,6 @@ func _build_environment() -> Environment:
 	environment.fog_enabled = true
 	environment.fog_light_color = Color("#5A6A7D")
 	environment.fog_light_energy = 0.22
-	environment.fog_density = 0.004
+	environment.fog_density = 0.0009
 	environment.fog_sky_affect = 0.65
 	return environment
