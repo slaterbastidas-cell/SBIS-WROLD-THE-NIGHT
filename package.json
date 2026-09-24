@@ -1,0 +1,8 @@
+{
+  "name": "sbis-world-the-night",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "bash build.sh"
+  }
+}
