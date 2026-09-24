@@ -37,6 +37,7 @@ func _create_region(index: int, region_name: String, center: Vector3) -> void:
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	mesh_instance.material_override = _build_material(index)
 	$Regions.add_child(mesh_instance)
+	_create_landmark(index, center, height)
 
 func _build_island_mesh(index: int, center: Vector3) -> ArrayMesh:
 	var vertices := PackedVector3Array()
@@ -90,6 +91,102 @@ func _build_island_mesh(index: int, center: Vector3) -> ArrayMesh:
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
+
+func _create_landmark(index: int, center: Vector3, terrain_height: float) -> void:
+	var root := Node3D.new()
+	root.name = "Landmark_%02d" % index
+	root.position = center + Vector3(0.0, terrain_height * 0.92, 0.0)
+	$Regions.add_child(root)
+
+	var stone := StandardMaterial3D.new()
+	stone.albedo_color = Color("#111821")
+	stone.roughness = 0.88
+
+	if index == 0:
+		_add_spire(root, 0.0, 0.0, 700.0, 180.0, stone)
+		_add_spire(root, -260.0, 140.0, 420.0, 110.0, stone)
+		_add_spire(root, 240.0, -120.0, 520.0, 130.0, stone)
+	elif index == 1:
+		for x in [-360.0, 360.0]:
+			_add_tower(root, x, 0.0, 650.0, 150.0, stone)
+		_add_bridge(root, 0.0, 0.0, 500.0, 1200.0, stone)
+	elif index == 2:
+		_add_obelisk(root, 0.0, 0.0, 900.0, 210.0, stone)
+	elif index == 3:
+		_add_obelisk(root, -240.0, 180.0, 430.0, 150.0, stone)
+		_add_obelisk(root, 260.0, -160.0, 360.0, 120.0, stone)
+	elif index == 4:
+		_add_spire(root, 0.0, 0.0, 1100.0, 260.0, stone)
+		_add_spire(root, -430.0, 260.0, 650.0, 180.0, stone)
+		_add_spire(root, 420.0, -260.0, 720.0, 190.0, stone)
+	elif index == 5:
+		_add_ring(root, 0.0, 0.0, 520.0, 70.0, stone)
+	elif index == 6:
+		_add_obelisk(root, 0.0, 0.0, 780.0, 180.0, stone)
+		_add_obelisk(root, 300.0, 120.0, 430.0, 120.0, stone)
+	elif index == 7:
+		_add_spire(root, 0.0, 0.0, 820.0, 200.0, stone)
+		_add_spire(root, -280.0, 220.0, 540.0, 140.0, stone)
+		_add_spire(root, 300.0, -200.0, 620.0, 150.0, stone)
+	else:
+		for x in [-520.0, 0.0, 520.0]:
+			_add_tower(root, x, 0.0, 900.0 if x == 0.0 else 620.0, 180.0, stone)
+		_add_bridge(root, 0.0, 0.0, 620.0, 1500.0, stone)
+
+func _add_obelisk(parent: Node3D, x: float, z: float, height: float, radius: float, material: Material) -> void:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius * 0.35
+	mesh.bottom_radius = radius
+	mesh.height = height
+	mesh.radial_segments = 6
+	var node := MeshInstance3D.new()
+	node.mesh = mesh
+	node.position = Vector3(x, height * 0.5, z)
+	node.material_override = material
+	parent.add_child(node)
+
+func _add_spire(parent: Node3D, x: float, z: float, height: float, radius: float, material: Material) -> void:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.0
+	mesh.bottom_radius = radius
+	mesh.height = height
+	mesh.radial_segments = 8
+	var node := MeshInstance3D.new()
+	node.mesh = mesh
+	node.position = Vector3(x, height * 0.5, z)
+	node.material_override = material
+	parent.add_child(node)
+
+func _add_tower(parent: Node3D, x: float, z: float, height: float, radius: float, material: Material) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(radius, height, radius)
+	var node := MeshInstance3D.new()
+	node.mesh = mesh
+	node.position = Vector3(x, height * 0.5, z)
+	node.material_override = material
+	parent.add_child(node)
+
+func _add_bridge(parent: Node3D, x: float, z: float, y: float, length: float, material: Material) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(length, 90.0, 140.0)
+	var node := MeshInstance3D.new()
+	node.mesh = mesh
+	node.position = Vector3(x, y, z)
+	node.material_override = material
+	parent.add_child(node)
+
+func _add_ring(parent: Node3D, x: float, z: float, radius: float, thickness: float, material: Material) -> void:
+	var mesh := TorusMesh.new()
+	mesh.inner_radius = radius
+	mesh.outer_radius = radius + thickness
+	mesh.rings = 48
+	mesh.ring_segments = 12
+	var node := MeshInstance3D.new()
+	node.mesh = mesh
+	node.position = Vector3(x, radius * 0.12, z)
+	node.rotation_degrees.x = 90.0
+	node.material_override = material
+	parent.add_child(node)
 
 func _build_material(index: int) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
