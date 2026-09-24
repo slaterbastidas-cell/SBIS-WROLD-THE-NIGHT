@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource path="res://world/world.gd" type="Script" id="1"]
+[sub_resource type="Environment" id="Environment_world"]
+background_mode = 1
+background_color = Color(0.03, 0.04, 0.06, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.62, 0.72, 0.84, 1)
+ambient_light_energy = 0.35
+
+[node name="World" type="Node3D"]
+script = ExtResource("1")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_world")
+
+[node name="WorldSun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-48, -28, 0)
+light_energy = 1.0
+shadow_enabled = true
+
+[node name="Aethermoor" type="Node3D" parent="."]
+
+[node name="Regions" type="Node3D" parent="Aethermoor"]
+
+[node name="TerrainChunks" type="Node3D" parent="Aethermoor"]
+
+[node name="Streaming" type="Node3D" parent="Aethermoor"]
