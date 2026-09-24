@@ -15,8 +15,8 @@ mkdir -p "${GODOT_DIR}" "${TEMPLATE_DIR}"
 if [ ! -x "${GODOT_BIN}" ]; then
   tmpdir="$(mktemp -d)"
   curl -fsSL "$GODOT_URL" -o "${tmpdir}/${GODOT_ZIP}"
-  unzip -q "${tmpdir}/${GODOT_ZIP}" -d "$tmpdir/godot"
-  install -m 0755 "${tmpdir}/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "${GODOT_BIN}"
+  unzip -q "${tmpdir}/${GODOT_ZIP}" -d "${tmpdir}/godot"
+  install -m 0755 "${tmpdir}/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "${GODOT_BIN}"
   rm -rf "$tmpdir"
 fi
 
@@ -24,7 +24,7 @@ fi
 if [ ! -f "${TEMPLATE_DIR}/web_nothreads_release.zip" ]; then
   tmpdir="$(mktemp -d)"
   curl -fsSL "$TEMPLATE_URL" -o "${tmpdir}/${TEMPLATE_ZIP}"
-  unzip -q "${tmpdir}/${TEMPLATE_ZIP}" -d "$tmpdir/templates"
+  unzip -q "${tmpdir}/${TEMPLATE_ZIP}" -d "${tmpdir}/templates"
   install -m 0644 "${tmpdir}/templates/templates/web_nothreads_release.zip" "${TEMPLATE_DIR}/web_nothreads_release.zip"
   if [ -f "${tmpdir}/templates/templates/web_nothreads_debug.zip" ]; then
     install -m 0644 "${tmpdir}/templates/templates/web_nothreads_debug.zip" "${TEMPLATE_DIR}/web_nothreads_debug.zip"
