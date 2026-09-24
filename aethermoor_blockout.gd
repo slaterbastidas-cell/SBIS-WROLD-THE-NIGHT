@@ -2,8 +2,8 @@ extends Node3D
 
 const REGION_RADIUS_M := 11970.0
 const REGION_COUNT := 9
-const RINGS := 18
-const SEGMENTS := 72
+const RINGS := 24
+const SEGMENTS := 96
 
 var region_centers := [
 	Vector3(0.0, 2200.0, -42000.0),
@@ -32,33 +32,46 @@ func _ready() -> void:
 func _create_region(index: int, region_name: String, center: Vector3) -> void:
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.name = region_name.replace(" ", "_")
-	mesh_instance.mesh = _build_island_mesh(index)
+	mesh_instance.mesh = _build_island_mesh(index, center)
 	mesh_instance.position = center
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	mesh_instance.material_override = _build_material(index)
 	$Regions.add_child(mesh_instance)
 
-func _build_island_mesh(index: int) -> ArrayMesh:
+func _build_island_mesh(index: int, center: Vector3) -> ArrayMesh:
 	var vertices := PackedVector3Array()
 	var indices := PackedInt32Array()
 	var scale := region_scales[index]
 	var height := region_heights[index]
+	var noise := FastNoiseLite.new()
+	noise.seed = 7103 + index * 977
+	noise.frequency = 0.00022
+	noise.fractal_octaves = 4
+	noise.fractal_gain = 0.55
 
 	for r in RINGS + 1:
 		var t := float(r) / float(RINGS)
 		var radius := REGION_RADIUS_M * t
 		for s in SEGMENTS:
 			var a := TAU * float(s) / float(SEGMENTS)
-			var n := sin(a * 3.0 + index * 1.7) * 0.035
-			n += sin(a * 7.0 - index * 0.9) * 0.018
-			var edge := 1.0 - pow(t, 5.0)
-			var local_x := cos(a) * radius * scale.x * (1.0 + n * (0.35 + 0.65 * t))
-			var local_z := sin(a) * radius * scale.y * (1.0 + n * (0.35 + 0.65 * t))
-			var plateau := sin(t * PI) * height
-			var terraces := sin(t * PI * 4.0 + index) * height * 0.06
-			var y := plateau + terraces
+			var edge_noise := sin(a * 3.0 + index * 1.7) * 0.045
+			edge_noise += sin(a * 7.0 - index * 0.9) * 0.022
+			var shape := 1.0 + edge_noise * (0.25 + 0.75 * t)
+
+			var local_x := cos(a) * radius * scale.x * shape
+			var local_z := sin(a) * radius * scale.y * shape
+
+			var radial := 1.0 - pow(t, 2.2)
+			var plateau := pow(max(0.0, 1.0 - t), 0.48) * height
+			var rolling := noise.get_noise_2d(center.x + local_x, center.z + local_z) * height * (0.12 + 0.28 * radial)
+			var ridge := sin((local_x + local_z) * 0.00055 + index * 1.3) * height * 0.07 * radial
+			var terrace := sin(t * PI * 5.0 + index * 0.8) * height * 0.045 * radial
+			var y := plateau + rolling + ridge + terrace
+
 			if t > 0.82:
-				y -= pow((t - 0.82) / 0.18, 2.0) * height * 0.55
+				var falloff := pow((t - 0.82) / 0.18, 1.65)
+				y -= falloff * height * 0.72
+
 			vertices.append(Vector3(local_x, y, local_z))
 
 	for r in RINGS:
@@ -87,4 +100,5 @@ func _build_material(index: int) -> StandardMaterial3D:
 	]
 	material.albedo_color = palettes[index]
 	material.roughness = 0.96
+	material.metallic = 0.02
 	return material
