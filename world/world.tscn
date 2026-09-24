@@ -1,10 +1,13 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource path="res://world/world.gd" type="Script" id="1"]
 [ext_resource path="res://aethermoor_blockout.gd" type="Script" id="2"]
+[ext_resource path="res://aethermoor_explorer.gd" type="Script" id="3"]
+[ext_resource path="res://world/streaming_manager.gd" type="Script" id="4"]
+[ext_resource path="res://world/world_debug.gd" type="Script" id="5"]
+
 [sub_resource type="Environment" id="Environment_world"]
-background_mode = 1
-background_color = Color(0.03, 0.04, 0.06, 1)
+background_mode = 2
 ambient_light_source = 3
 ambient_light_color = Color(0.62, 0.72, 0.84, 1)
 ambient_light_energy = 0.35
@@ -24,5 +27,17 @@ shadow_enabled = true
 script = ExtResource("2")
 
 [node name="Regions" type="Node3D" parent="Aethermoor"]
+
 [node name="TerrainChunks" type="Node3D" parent="Aethermoor"]
+
 [node name="Streaming" type="Node3D" parent="Aethermoor"]
+script = ExtResource("4")
+
+[node name="ExplorerCamera" type="Camera3D" parent="."]
+script = ExtResource("3")
+fov = 70.0
+near = 1.0
+far = 120000.0
+
+[node name="Debug" type="CanvasLayer" parent="."]
+script = ExtResource("5")
