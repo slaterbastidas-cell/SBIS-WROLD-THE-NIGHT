@@ -14,24 +14,27 @@ mkdir -p "${GODOT_DIR}" "${TEMPLATE_DIR}"
 
 if [ ! -x "${GODOT_BIN}" ]; then
   tmpdir="$(mktemp -d)"
-  trap 'rm -rf "$tmpdir"' EXIT
   curl -fsSL "$GODOT_URL" -o "${tmpdir}/${GODOT_ZIP}"
   unzip -q "${tmpdir}/${GODOT_ZIP}" -d "$tmpdir/godot"
-  install -m 0755 "${tmpdir}/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "${GODOT_BIN}"
+  install -m 0755 "${tmpdir}/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "${GODOT_BIN}"
+  rm -rf "$tmpdir"
 fi
 
-if [ ! -f "${TEMPLATE_DIR}/web_release.zip" ]; then
+# Godot 4.2 expects the Web export templates as zip files in this directory.
+if [ ! -f "${TEMPLATE_DIR}/web_nothreads_release.zip" ]; then
   tmpdir="$(mktemp -d)"
-  trap 'rm -rf "$tmpdir"' EXIT
   curl -fsSL "$TEMPLATE_URL" -o "${tmpdir}/${TEMPLATE_ZIP}"
   unzip -q "${tmpdir}/${TEMPLATE_ZIP}" -d "$tmpdir/templates"
-  mkdir -p "${TEMPLATE_DIR}"
-  unzip -q "${tmpdir}/templates/templates/web_nothreads_release.zip" -d "${TEMPLATE_DIR}"
-  cp "${TEMPLATE_DIR}/web_nothreads_release.zip" "${TEMPLATE_DIR}/web_release.zip" 2>/dev/null || true
+  install -m 0644 "${tmpdir}/templates/templates/web_nothreads_release.zip" "${TEMPLATE_DIR}/web_nothreads_release.zip"
+  if [ -f "${tmpdir}/templates/templates/web_nothreads_debug.zip" ]; then
+    install -m 0644 "${tmpdir}/templates/templates/web_nothreads_debug.zip" "${TEMPLATE_DIR}/web_nothreads_debug.zip"
+  fi
+  rm -rf "$tmpdir"
 fi
 
 rm -rf export/web
 mkdir -p export/web
+
 "${GODOT_BIN}" --headless --path . --editor --quit-after 1
 "${GODOT_BIN}" --headless --path . --export-release Web export/web/index.html
 
