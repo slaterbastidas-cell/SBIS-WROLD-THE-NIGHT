@@ -1,16 +1,16 @@
 extends Camera3D
 
-@export var move_speed := 180.0
+@export var move_speed := 220.0
 @export var boost_multiplier := 4.0
 @export var look_sensitivity := 0.08
-# yaw 0 = look toward -Z (toward origin / Castillo del Cosmos from z=+15500)
+# yaw 0 = mira hacia -Z (hacia el origen / isla)
 var _yaw := 0.0
-var _pitch := -14.0
+var _pitch := -18.0
 var _mouse_look := false
 
 func _ready() -> void:
-	# South of Castillo del Cosmos, looking north toward the heart of Aethermoor
-	position = Vector3(0.0, 7200.0, 18000.0)
+	# Vista elevada mirando la isla centrada en el origen
+	position = Vector3(0.0, 9000.0, 22000.0)
 	rotation_degrees = Vector3(_pitch, _yaw, 0.0)
 	current = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
