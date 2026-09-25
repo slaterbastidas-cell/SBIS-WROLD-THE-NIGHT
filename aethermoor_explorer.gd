@@ -1,15 +1,15 @@
 extends Camera3D
 
-@export var move_speed := 350.0
+@export var move_speed := 400.0
 @export var boost_multiplier := 5.0
 @export var look_sensitivity := 0.08
-var _yaw := 0.0
-var _pitch := -28.0
+var _yaw := 25.0
+var _pitch := -12.0
 var _mouse_look := false
 
 func _ready() -> void:
-	# Empieza sobre el borde del abismo, mirando hacia abajo al Refugio
-	position = Vector3(0.0, 5500.0, 12000.0)
+	# Vista 3/4 que enseña la verticalidad de la ciudad-isla
+	position = Vector3(22000.0, 8000.0, 28000.0)
 	rotation_degrees = Vector3(_pitch, _yaw, 0.0)
 	current = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
