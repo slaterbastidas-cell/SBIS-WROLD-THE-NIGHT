@@ -1,15 +1,15 @@
 extends Camera3D
 
-@export var move_speed := 400.0
-@export var boost_multiplier := 5.0
+@export var move_speed := 300.0
+@export var boost_multiplier := 4.0
 @export var look_sensitivity := 0.08
 var _yaw := 0.0
-var _pitch := -15.0
+var _pitch := -18.0
 var _mouse_look := false
 
 func _ready() -> void:
-	# Mira directo al origen (-Z), donde está la ciudad-isla
-	position = Vector3(0.0, 9000.0, 32000.0)
+	# Vista 3/4 de la isla de inicio (diámetro ~2.4 km)
+	position = Vector3(0.0, 1400.0, 3200.0)
 	rotation_degrees = Vector3(_pitch, _yaw, 0.0)
 	current = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
