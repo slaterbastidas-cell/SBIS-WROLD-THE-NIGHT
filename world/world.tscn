@@ -1,43 +1,42 @@
-[gd_scene load_steps=6 format=3]
+extends Node3D
 
-[ext_resource path="res://world/world.gd" type="Script" id="1"]
-[ext_resource path="res://aethermoor_blockout.gd" type="Script" id="2"]
-[ext_resource path="res://aethermoor_explorer.gd" type="Script" id="3"]
-[ext_resource path="res://world/streaming_manager.gd" type="Script" id="4"]
-[ext_resource path="res://world/world_debug.gd" type="Script" id="5"]
+func _ready() -> void:
+	$WorldEnvironment.environment = _build_environment()
+	if has_node("WorldSun"):
+		var sun: DirectionalLight3D = $WorldSun
+		sun.light_energy = 1.8
+		sun.light_color = Color(0.75, 0.82, 0.92)
+		sun.shadow_enabled = false
+		sun.rotation_degrees = Vector3(-40, -30, 0)
+	WorldManager.update_player_position($ExplorerCamera.global_position)
+	$Aethermoor/Streaming.update_streaming(WorldManager.player_world_position)
 
-[sub_resource type="Environment" id="Environment_world"]
-background_mode = 2
-ambient_light_source = 3
-ambient_light_color = Color(0.62, 0.72, 0.84, 1)
-ambient_light_energy = 0.35
+func _process(_delta: float) -> void:
+	$Aethermoor/Streaming.update_streaming(WorldManager.player_world_position)
 
-[node name="World" type="Node3D"]
-script = ExtResource("1")
+func _build_environment() -> Environment:
+	var environment := Environment.new()
+	environment.background_mode = Environment.BG_SKY
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_world")
+	var sky := Sky.new()
+	var sky_material := ProceduralSkyMaterial.new()
+	sky_material.sky_top_color = Color(0.02, 0.03, 0.06)
+	sky_material.sky_horizon_color = Color(0.12, 0.16, 0.22)
+	sky_material.ground_bottom_color = Color(0.03, 0.04, 0.06)
+	sky_material.ground_horizon_color = Color(0.08, 0.10, 0.14)
+	sky_material.sun_angle_max = 12.0
+	sky.sky_material = sky_material
+	environment.sky = sky
 
-[node name="WorldSun" type="DirectionalLight3D" parent="."]
-rotation_degrees = Vector3(-48, -28, 0)
-light_energy = 1.0
-shadow_enabled = true
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	environment.ambient_light_color = Color(0.55, 0.65, 0.80)
+	environment.ambient_light_energy = 0.75
+	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.tonemap_exposure = 1.25
 
-[node name="Aethermoor" type="Node3D" parent="."]
-script = ExtResource("2")
-
-[node name="Regions" type="Node3D" parent="Aethermoor"]
-
-[node name="TerrainChunks" type="Node3D" parent="Aethermoor"]
-
-[node name="Streaming" type="Node3D" parent="Aethermoor"]
-script = ExtResource("4")
-
-[node name="ExplorerCamera" type="Camera3D" parent="."]
-script = ExtResource("3")
-fov = 70.0
-near = 1.0
-far = 120000.0
-
-[node name="Debug" type="CanvasLayer" parent="."]
-script = ExtResource("5")
+	environment.fog_enabled = true
+	environment.fog_light_color = Color(0.25, 0.32, 0.40)
+	environment.fog_light_energy = 0.2
+	environment.fog_density = 0.0002
+	environment.fog_sky_affect = 0.35
+	return environment
