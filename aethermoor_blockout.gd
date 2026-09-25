@@ -1,162 +1,223 @@
 extends Node3D
 
-# Blockout robusto y visible en Web/gl_compatibility.
-# Ciudad-isla vertical sombría + abismo del Refugio.
-# Sin look_at ni operaciones frágiles.
+# Zona de inicio — Isla del Alba (referencia: ciudad blanca sobre roca oscura flotante)
+# Escala: diámetro ~2400 m (muy por encima de cualquier estadio; ~3×+ en espíritu monumental)
+
+const R := 1200.0          # radio superficie
+const H_ROCK := 900.0      # grosor masa rocosa
+const H_CITY := 180.0      # altura terrazas
 
 func _ready() -> void:
 	var root := Node3D.new()
-	root.name = "Citadel"
+	root.name = "Isle_of_Dawn"
 	$Regions.add_child(root)
 
-	# --- Masa principal (siempre visible) ---
-	_add_cyl(root, Vector3(0, 0, 0), 12000, 11000, 2500, Color(0.28, 0.32, 0.40))
-	_add_cyl(root, Vector3(0, 2800, 0), 9000, 9500, 3000, Color(0.32, 0.36, 0.44))
-	_add_cyl(root, Vector3(0, 6000, 0), 6000, 7000, 3500, Color(0.36, 0.40, 0.48))
-	_add_cyl(root, Vector3(0, 9500, 0), 2800, 4000, 2800, Color(0.40, 0.44, 0.52))
-	_add_cyl(root, Vector3(0, 11800, 0), 1200, 1800, 1800, Color(0.44, 0.48, 0.56))
+	_build_rock_mass(root)
+	_build_city(root)
+	_build_underside_lights(root)
+	_build_portal_ring(root)
+	_build_void_plane(root)
 
-	# Underside flotante
-	_add_cyl(root, Vector3(0, -2000, 0), 11500, 2500, 2800, Color(0.14, 0.16, 0.20))
+# ---------------------------------------------------------------------------
+# Masa rocosa oscura (base flotante + estalactitas)
+# ---------------------------------------------------------------------------
+func _build_rock_mass(parent: Node3D) -> void:
+	# Disco superior de roca
+	_cyl(parent, "RockTop", Vector3(0, 0, 0), R, R * 0.98, 120.0, Color(0.12, 0.11, 0.10))
+	# Cuerpo
+	_cyl(parent, "RockBody", Vector3(0, -H_ROCK * 0.35, 0), R * 0.98, R * 0.55, H_ROCK * 0.7, Color(0.09, 0.08, 0.08))
+	# Cuña inferior
+	_cyl(parent, "RockTip", Vector3(0, -H_ROCK * 0.85, 0), R * 0.55, R * 0.08, H_ROCK * 0.5, Color(0.07, 0.06, 0.06))
 
-	# --- Anillos / terrazas ---
-	_add_cyl(root, Vector3(0, 4500, 0), 10000, 10500, 180, Color(0.30, 0.34, 0.42))
-	_add_cyl(root, Vector3(0, 3000, 0), 11000, 11500, 160, Color(0.28, 0.32, 0.40))
-	_add_cyl(root, Vector3(0, 1200, 0), 11800, 12200, 160, Color(0.26, 0.30, 0.38))
-
-	# --- Torres (8) ---
-	for i in 8:
-		var a := TAU * float(i) / 8.0
-		var dist := 5500.0
-		var h := 3500.0 + float(i % 4) * 800.0
-		var x := cos(a) * dist
-		var z := sin(a) * dist
-		_add_cyl(root, Vector3(x, 1500 + h * 0.5, z), 180, 220, h, Color(0.34, 0.38, 0.46))
-		_add_cyl(root, Vector3(x, 1500 + h + 400, z), 20, 90, 700, Color(0.50, 0.56, 0.64))
-
-	# --- Bloques de edificios en el anillo medio ---
+	# Estalactitas / pilares colgantes
 	for i in 16:
-		var a := TAU * float(i) / 16.0
-		var dist := 8500.0
-		var h := 500.0 + float(i % 5) * 200.0
-		var x := cos(a) * dist
-		var z := sin(a) * dist
-		_add_box(root, Vector3(x, 3200 + h * 0.5, z), Vector3(350, h, 300), Color(0.32, 0.36, 0.44))
+		var a := TAU * float(i) / 16.0 + 0.1
+		var dist := R * (0.35 + float(i % 4) * 0.12)
+		var len := 400.0 + float(i % 5) * 180.0
+		_cyl(parent, "Stalactite_%d" % i,
+			Vector3(cos(a) * dist, -H_ROCK * 0.5 - len * 0.35, sin(a) * dist),
+			18.0 + float(i % 3) * 10.0,
+			40.0 + float(i % 3) * 15.0,
+			len,
+			Color(0.06, 0.05, 0.05))
 
-	# --- Puentes ---
-	for i in 4:
-		var a := TAU * float(i) / 4.0 + 0.4
-		var x := cos(a) * 7000.0
-		var z := sin(a) * 7000.0
-		_add_box(root, Vector3(x, 4600, z), Vector3(abs(cos(a)) * 2500 + 800, 80, abs(sin(a)) * 2500 + 800), Color(0.24, 0.28, 0.34))
+# ---------------------------------------------------------------------------
+# Ciudad blanca / dorada (domo, anillos, torres, terrazas)
+# ---------------------------------------------------------------------------
+func _build_city(parent: Node3D) -> void:
+	var city := Node3D.new()
+	city.name = "City"
+	city.position = Vector3(0, 80, 0)
+	parent.add_child(city)
 
-	# --- Arcos grandes en la base ---
-	for i in 6:
-		var a := TAU * float(i) / 6.0
-		var x := cos(a) * 9000.0
-		var z := sin(a) * 9000.0
-		_add_box(root, Vector3(x, -200, z), Vector3(200, 1800, 200), Color(0.18, 0.20, 0.26))
-		_add_box(root, Vector3(x + cos(a + 1.2) * 600, 700, z + sin(a + 1.2) * 600), Vector3(1200, 160, 200), Color(0.18, 0.20, 0.26))
+	# Plaza / anillos concéntricos
+	_cyl(city, "Plaza", Vector3(0, 10, 0), R * 0.72, R * 0.75, 40.0, Color(0.92, 0.90, 0.85))
+	_cyl(city, "RingA", Vector3(0, 50, 0), R * 0.55, R * 0.58, 30.0, Color(0.88, 0.86, 0.80))
+	_cyl(city, "RingB", Vector3(0, 90, 0), R * 0.38, R * 0.42, 30.0, Color(0.90, 0.88, 0.82))
 
-	# --- Niveles colgantes ---
-	_add_cyl(root, Vector3(0, -4000, 0), 9000, 9500, 200, Color(0.20, 0.24, 0.30))
-	_add_cyl(root, Vector3(0, -6500, 0), 7000, 7500, 200, Color(0.18, 0.22, 0.28))
-	_add_cyl(root, Vector3(0, -9500, 0), 5000, 5500, 200, Color(0.16, 0.20, 0.26))
+	# Domo central
+	_cyl(city, "DomeBase", Vector3(0, 180, 0), 220.0, 260.0, 120.0, Color(0.95, 0.93, 0.88))
+	_sphere(city, "Dome", Vector3(0, 320, 0), 240.0, Color(0.96, 0.94, 0.90), Color(1.0, 0.95, 0.75), 0.6)
+	# Aguja del domo
+	_cyl(city, "DomeSpire", Vector3(0, 520, 0), 8.0, 28.0, 160.0, Color(0.85, 0.78, 0.55))
 
+	# Torres / minaretes alrededor del domo
 	for i in 8:
 		var a := TAU * float(i) / 8.0
-		var x := cos(a) * 4000.0
-		var z := sin(a) * 4000.0
-		_add_cyl(root, Vector3(x, -5500, z), 60, 140, 2500, Color(0.12, 0.14, 0.18))
+		var d := 380.0
+		var x := cos(a) * d
+		var z := sin(a) * d
+		_cyl(city, "Minaret_%d" % i, Vector3(x, 280, z), 22.0, 32.0, 420.0, Color(0.93, 0.91, 0.86))
+		_cyl(city, "MinaretCap_%d" % i, Vector3(x, 520, z), 6.0, 26.0, 80.0, Color(0.80, 0.72, 0.48))
 
-	# --- Refugio: pozo y raíces ---
-	_add_cyl(root, Vector3(0, -5000, 0), 3000, 2500, 14000, Color(0.08, 0.10, 0.14))
+	# Torres exteriores (anillo amplio)
+	for i in 12:
+		var a := TAU * float(i) / 12.0 + 0.2
+		var d := R * 0.62
+		var x := cos(a) * d
+		var z := sin(a) * d
+		var h := 280.0 + float(i % 4) * 60.0
+		_cyl(city, "OuterTower_%d" % i, Vector3(x, h * 0.5 + 20.0, z), 28.0, 40.0, h, Color(0.91, 0.89, 0.84))
+		_cyl(city, "OuterSpire_%d" % i, Vector3(x, h + 60.0, z), 5.0, 20.0, 70.0, Color(0.82, 0.74, 0.50))
 
-	# Cornisas
-	for i in 6:
-		var t := float(i) / 5.0
-		var y := -2000.0 - t * 10000.0
-		var a := t * TAU * 1.5
-		var r := 2200.0
-		_add_box(root, Vector3(cos(a) * r, y, sin(a) * r), Vector3(1800, 120, 700), Color(0.22, 0.26, 0.32))
+	# Bloques de “edificios” en terrazas
+	for i in 20:
+		var a := TAU * float(i) / 20.0
+		var d := R * 0.48
+		var x := cos(a) * d
+		var z := sin(a) * d
+		var h := 90.0 + float(i % 5) * 35.0
+		_box(city, "House_%d" % i, Vector3(x, 40 + h * 0.5, z), Vector3(70, h, 60), Color(0.90, 0.88, 0.82))
 
-	# Raíces (cilindros verticales / inclinados simples, sin look_at)
-	_add_cyl(root, Vector3(2000, -6000, 1000), 200, 280, 8000, Color(0.10, 0.18, 0.14), Color(0.24, 1.0, 0.60), 1.5)
-	_add_cyl(root, Vector3(-1800, -7000, -1200), 180, 250, 9000, Color(0.10, 0.16, 0.20), Color(0.35, 0.85, 1.0), 1.5)
-	_add_cyl(root, Vector3(800, -9000, -2000), 220, 300, 7000, Color(0.10, 0.18, 0.14), Color(0.24, 1.0, 0.60), 1.8)
-	_add_cyl(root, Vector3(-1000, -5000, 2000), 160, 220, 10000, Color(0.10, 0.16, 0.20), Color(0.35, 0.85, 1.0), 1.4)
+	# Muralla baja perimetral
+	_cyl(city, "Wall", Vector3(0, 35, 0), R * 0.88, R * 0.92, 50.0, Color(0.85, 0.82, 0.76))
 
-	# Núcleo
-	_add_cyl(root, Vector3(0, -14000, 0), 1500, 2200, 1500, Color(0.06, 0.08, 0.12), Color(0.30, 1.0, 0.80), 2.0)
-	_add_sphere(root, Vector3(0, -13500, 0), 500, Color(0.05, 0.08, 0.10), Color(0.40, 1.0, 0.85), 4.0)
+	# Puentes radiales simples
+	for i in 4:
+		var a := TAU * float(i) / 4.0
+		var mid := Vector3(cos(a) * R * 0.4, 55, sin(a) * R * 0.4)
+		_box(city, "Bridge_%d" % i, mid, Vector3(abs(cos(a)) * 500 + 80, 20, abs(sin(a)) * 500 + 80), Color(0.88, 0.86, 0.80))
 
-	# --- Luces bioluminiscentes ---
-	_add_glow(root, Vector3(0, 12000, 0), 120, Color(0.40, 0.80, 1.0), 3.0)
-	_add_glow(root, Vector3(0, 6000, 0), 100, Color(0.30, 1.0, 0.70), 2.5)
-	_add_glow(root, Vector3(0, 0, 0), 100, Color(0.40, 0.80, 1.0), 2.5)
-	_add_glow(root, Vector3(0, -8000, 0), 150, Color(0.30, 1.0, 0.75), 3.5)
-	_add_glow(root, Vector3(0, -13500, 0), 200, Color(0.40, 1.0, 0.85), 5.0)
+# ---------------------------------------------------------------------------
+# Luces cálidas en la roca inferior (como la referencia)
+# ---------------------------------------------------------------------------
+func _build_underside_lights(parent: Node3D) -> void:
+	for i in 24:
+		var a := TAU * float(i) / 24.0
+		var dist := R * (0.25 + float(i % 5) * 0.1)
+		var y := -200.0 - float(i % 6) * 90.0
+		var pos := Vector3(cos(a) * dist, y, sin(a) * dist)
+		_sphere(parent, "WarmLight_%d" % i, pos, 12.0 + float(i % 3) * 4.0,
+			Color(0.15, 0.10, 0.05), Color(1.0, 0.75, 0.35), 3.5)
+		var light := OmniLight3D.new()
+		light.light_color = Color(1.0, 0.72, 0.35)
+		light.light_energy = 2.2
+		light.omni_range = 350.0
+		light.position = pos
+		parent.add_child(light)
 
-	# OmniLights
-	_add_omni(root, Vector3(0, 12000, 0), Color(0.40, 0.80, 1.0), 2.5, 5000)
-	_add_omni(root, Vector3(0, 4000, 0), Color(0.50, 0.70, 0.90), 2.0, 6000)
-	_add_omni(root, Vector3(0, -6000, 0), Color(0.30, 1.0, 0.70), 2.5, 5000)
-	_add_omni(root, Vector3(0, -13000, 0), Color(0.40, 1.0, 0.85), 3.5, 4000)
+# ---------------------------------------------------------------------------
+# Anillo portal bajo la isla (referencia)
+# ---------------------------------------------------------------------------
+func _build_portal_ring(parent: Node3D) -> void:
+	var ring := MeshInstance3D.new()
+	ring.name = "PortalRing"
+	var t := TorusMesh.new()
+	t.inner_radius = 380.0
+	t.outer_radius = 480.0
+	t.rings = 48
+	t.ring_segments = 20
+	ring.mesh = t
+	ring.position = Vector3(0, -H_ROCK * 1.35, 0)
+	ring.rotation_degrees.x = 90.0
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.1, 0.12, 0.08, 0.85)
+	mat.emission_enabled = true
+	mat.emission = Color(0.85, 1.0, 0.45)
+	mat.emission_energy_multiplier = 4.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring.material_override = mat
+	parent.add_child(ring)
 
-# ---- helpers seguros ----
-func _add_cyl(parent: Node3D, pos: Vector3, r_top: float, r_bot: float, h: float, albedo: Color, emission: Color = Color.BLACK, em_energy: float = 0.0) -> void:
-	var n := MeshInstance3D.new()
+	# Núcleo del anillo
+	_sphere(parent, "PortalCore", Vector3(0, -H_ROCK * 1.35, 0), 40.0,
+		Color(0.1, 0.12, 0.05), Color(1.0, 1.0, 0.6), 6.0)
+
+	var portal_light := OmniLight3D.new()
+	portal_light.light_color = Color(0.85, 1.0, 0.5)
+	portal_light.light_energy = 4.0
+	portal_light.omni_range = 1200.0
+	portal_light.position = Vector3(0, -H_ROCK * 1.35, 0)
+	parent.add_child(portal_light)
+
+# ---------------------------------------------------------------------------
+# Plano de “océano / vacío” oscuro (suelo visual lejano)
+# ---------------------------------------------------------------------------
+func _build_void_plane(parent: Node3D) -> void:
+	var water := MeshInstance3D.new()
+	water.name = "VoidSea"
+	var mesh := PlaneMesh.new()
+	mesh.size = Vector2(20000, 20000)
+	water.mesh = mesh
+	water.position = Vector3(0, -H_ROCK * 1.8, 0)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.02, 0.04, 0.07)
+	mat.roughness = 0.15
+	mat.metallic = 0.6
+	mat.emission_enabled = true
+	mat.emission = Color(0.02, 0.05, 0.08)
+	mat.emission_energy_multiplier = 0.3
+	water.material_override = mat
+	parent.add_child(water)
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+func _cyl(parent: Node3D, n: String, pos: Vector3, r_top: float, r_bot: float, h: float, col: Color, em: Color = Color.BLACK, em_e: float = 0.0) -> void:
+	var node := MeshInstance3D.new()
+	node.name = n
 	var m := CylinderMesh.new()
 	m.top_radius = r_top
 	m.bottom_radius = r_bot
 	m.height = h
-	m.radial_segments = 24
-	n.mesh = m
-	n.position = pos
-	n.material_override = _make_mat(albedo, emission, em_energy)
-	parent.add_child(n)
+	m.radial_segments = 32
+	node.mesh = m
+	node.position = pos
+	node.material_override = _mat(col, em, em_e)
+	parent.add_child(node)
 
-func _add_box(parent: Node3D, pos: Vector3, size: Vector3, albedo: Color) -> void:
-	var n := MeshInstance3D.new()
+func _box(parent: Node3D, n: String, pos: Vector3, size: Vector3, col: Color) -> void:
+	var node := MeshInstance3D.new()
+	node.name = n
 	var m := BoxMesh.new()
 	m.size = size
-	n.mesh = m
-	n.position = pos
-	n.material_override = _make_mat(albedo)
-	parent.add_child(n)
+	node.mesh = m
+	node.position = pos
+	node.material_override = _mat(col)
+	parent.add_child(node)
 
-func _add_sphere(parent: Node3D, pos: Vector3, radius: float, albedo: Color, emission: Color, em_energy: float) -> void:
-	var n := MeshInstance3D.new()
+func _sphere(parent: Node3D, n: String, pos: Vector3, r: float, col: Color, em: Color = Color.BLACK, em_e: float = 0.0) -> void:
+	var node := MeshInstance3D.new()
+	node.name = n
 	var m := SphereMesh.new()
-	m.radius = radius
-	m.height = radius * 2.0
-	n.mesh = m
-	n.position = pos
-	n.material_override = _make_mat(albedo, emission, em_energy)
-	parent.add_child(n)
+	m.radius = r
+	m.height = r * 2.0
+	node.mesh = m
+	node.position = pos
+	node.material_override = _mat(col, em, em_e)
+	parent.add_child(node)
 
-func _add_glow(parent: Node3D, pos: Vector3, radius: float, emission: Color, em_energy: float) -> void:
-	_add_sphere(parent, pos, radius, Color(0.05, 0.06, 0.08, 0.8), emission, em_energy)
-
-func _add_omni(parent: Node3D, pos: Vector3, col: Color, energy: float, range_m: float) -> void:
-	var l := OmniLight3D.new()
-	l.light_color = col
-	l.light_energy = energy
-	l.omni_range = range_m
-	l.position = pos
-	parent.add_child(l)
-
-func _make_mat(albedo: Color, emission: Color = Color.BLACK, em_energy: float = 0.0) -> StandardMaterial3D:
+func _mat(albedo: Color, emission: Color = Color.BLACK, em_energy: float = 0.0) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = albedo
-	mat.roughness = 0.88
-	mat.metallic = 0.03
+	mat.roughness = 0.75
+	mat.metallic = 0.08
 	if em_energy > 0.0:
 		mat.emission_enabled = true
 		mat.emission = emission
 		mat.emission_energy_multiplier = em_energy
 	else:
 		mat.emission_enabled = true
-		mat.emission = albedo * 0.4
-		mat.emission_energy_multiplier = 0.35
+		mat.emission = albedo * 0.25
+		mat.emission_energy_multiplier = 0.25
 	return mat
