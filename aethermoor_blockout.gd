@@ -38,7 +38,7 @@ func _create_region(index: int, region_name: String, center: Vector3) -> void:
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	mesh_instance.material_override = _build_material(index)
 	$Regions.add_child(mesh_instance)
-	_create_landmark(index, center, height)
+	_create_landmark(index, center, region_heights[index])
 
 func _build_island_mesh(index: int, center: Vector3) -> ArrayMesh:
 	var vertices := PackedVector3Array()
@@ -82,15 +82,18 @@ func _build_island_mesh(index: int, center: Vector3) -> ArrayMesh:
 			var b := r * SEGMENTS + (s + 1) % SEGMENTS
 			var c := (r + 1) * SEGMENTS + (s + 1) % SEGMENTS
 			var d := (r + 1) * SEGMENTS + s
-			indices.append_array([a, c, b, a, d, c])
+			# Winding that produces upward-facing normals for terrain
+			indices.append_array([a, b, c, a, c, d])
 
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_INDEX] = indices
-
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	# Build with SurfaceTool so normals are generated (critical for gl_compatibility lighting)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in range(0, indices.size(), 3):
+		st.add_vertex(vertices[indices[i]])
+		st.add_vertex(vertices[indices[i + 1]])
+		st.add_vertex(vertices[indices[i + 2]])
+	st.generate_normals()
+	var mesh := st.commit()
 	return mesh
 
 func _create_fractura(center: Vector3) -> void:
@@ -108,7 +111,7 @@ func _create_fractura(center: Vector3) -> void:
 	wound.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	wound.albedo_color.a = 0.78
 
-	for angle in [ -18.0, 18.0 ]:
+	for angle in [-18.0, 18.0]:
 		var blade := MeshInstance3D.new()
 		var mesh := BoxMesh.new()
 		mesh.size = Vector3(180.0, 12000.0, 900.0)
@@ -134,8 +137,9 @@ func _create_landmark(index: int, center: Vector3, terrain_height: float) -> voi
 	$Regions.add_child(root)
 
 	var stone := StandardMaterial3D.new()
-	stone.albedo_color = Color("#111821")
+	stone.albedo_color = Color("#2A3340")
 	stone.roughness = 0.88
+	stone.metallic = 0.05
 
 	if index == 0:
 		_add_spire(root, 0.0, 0.0, 700.0, 180.0, stone)
@@ -225,12 +229,17 @@ func _add_ring(parent: Node3D, x: float, z: float, radius: float, thickness: flo
 
 func _build_material(index: int) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
+	# Slightly lifted albedos so terrain is readable under night ambient + directional light
 	var palettes := [
-		Color("#27313D"), Color("#34343A"), Color("#4A4033"),
-		Color("#55483A"), Color("#1D2024"), Color("#263A31"),
-		Color("#303A43"), Color("#25283A"), Color("#202B32")
+		Color("#3A4658"), Color("#4A4A52"), Color("#5C5040"),
+		Color("#6A5A48"), Color("#2E343C"), Color("#354A40"),
+		Color("#404A56"), Color("#353A50"), Color("#2E3A44")
 	]
 	material.albedo_color = palettes[index]
-	material.roughness = 0.96
-	material.metallic = 0.02
+	material.roughness = 0.92
+	material.metallic = 0.04
+	# Subtle emission so islands remain visible even when the sun is edge-on
+	material.emission_enabled = true
+	material.emission = palettes[index] * 0.35
+	material.emission_energy_multiplier = 0.25
 	return material
