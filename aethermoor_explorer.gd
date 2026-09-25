@@ -3,13 +3,13 @@ extends Camera3D
 @export var move_speed := 400.0
 @export var boost_multiplier := 5.0
 @export var look_sensitivity := 0.08
-var _yaw := 25.0
-var _pitch := -12.0
+var _yaw := 0.0
+var _pitch := -15.0
 var _mouse_look := false
 
 func _ready() -> void:
-	# Vista 3/4 que enseña la verticalidad de la ciudad-isla
-	position = Vector3(22000.0, 8000.0, 28000.0)
+	# Mira directo al origen (-Z), donde está la ciudad-isla
+	position = Vector3(0.0, 9000.0, 32000.0)
 	rotation_degrees = Vector3(_pitch, _yaw, 0.0)
 	current = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
